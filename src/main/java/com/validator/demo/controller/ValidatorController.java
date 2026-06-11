@@ -4,15 +4,17 @@ package com.validator.demo.controller;
 import com.validator.demo.dto.ValidatorRequestDTO;
 import com.validator.demo.dto.ValidatorResponseDTO;
 import com.validator.demo.model.interfaces.Validator;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
-@RestController
-@RequestMapping("/api/validators")
+import java.util.List;
+
+@Controller
+@RequestMapping("/validators")
 public class ValidatorController {
 
     private final Validator validator;
@@ -21,8 +23,23 @@ public class ValidatorController {
         this.validator = validator;
     }
 
-    @PostMapping("/password")
-    public ValidatorResponseDTO validatePassword(@Valid @RequestBody ValidatorRequestDTO request) {
-        return this.validator.execute(request.value());
+    @GetMapping("/password")
+    public String showForm(Model model) {
+        model.addAttribute("request", new ValidatorRequestDTO(""));
+        return "password-form";
+    }
+
+    @PostMapping("/password-validate")
+    public String validatePassword(@Valid @ModelAttribute("request") ValidatorRequestDTO request,
+                                   BindingResult bindingResult,
+                                   Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("response", new ValidatorResponseDTO(false, List.of("A senha não pode está em branco")));
+            return "password-form";
+        }
+
+        ValidatorResponseDTO response = this.validator.execute(request.value());
+        model.addAttribute("response", response);
+        return "password-form";
     }
 }
